@@ -128,9 +128,10 @@ def find_files_in(root: str, template: Optional[str] = None, abs: bool = True) -
         return output
     _, folders, files = next(os.walk(root))
     for f in files:
-        if abs:
-            f = os.path.join(root, f)
+        f = os.path.join(root, f)
         if template is None or file_is_matching(f, template):
+            if not abs:
+                f = os.path.basename(f)
             output.append(f)
     return output
 

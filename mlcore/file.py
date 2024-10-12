@@ -82,6 +82,21 @@ def save_csv(dataframe: pd.DataFrame, out_filepath: str) -> None:
         dataframe.to_csv(buffer)
 
 
+def stem(path: str):
+    """
+    Given a file (or folder) path return the stem string. For example:
+
+    `path/to/file.txt` will yield `file`
+    `path/to/folder` will yield `folder`
+
+    Args:
+        path: the path to analyze for stem.
+    """
+    if path.endswith("/"):
+        path = path[:-1]
+    return os.path.splitext(os.path.basename(path))[0]
+
+
 def file_exists(filepath: str, req_ext: str = None) -> bool:
     """
     Given a filepath, determine if the file exists with the required extension.

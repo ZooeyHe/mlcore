@@ -112,7 +112,7 @@ def folder_is_matching(folder: str, template: str) -> bool:
         return False
 
 
-def copy_dir(src_dir: str, dst_dir: str):
+def copy_dir(src_dir: str, dst_dir: str, ignore_patterns: List[str] = None):
     """
     General copy method for recursively copying folders or files. The supported copy setups include:
         - folderA -> folderB  # Copy + Rename to folderB
@@ -124,9 +124,11 @@ def copy_dir(src_dir: str, dst_dir: str):
     Args:
         src_path: the path to the source file or folder.
         dst_path: the path to the destination file or folder.
+        ignore_patterns: types of files or dir patterns to ignore when copying.
+            For example -> '*.pyc', 'tmp*'
     """
     try:
-        shutil.copytree(src_dir, dst_dir)
+        shutil.copytree(src_dir, dst_dir, ignore=shutil.ignore_patterns(*(ignore_patterns or [])))
     except OSError as exc:
         if exc.errno in (errno.ENOTDIR, errno.EINVAL):
             shutil.copy(src_dir, dst_dir)

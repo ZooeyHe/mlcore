@@ -50,6 +50,7 @@ class ETC():
         Args:
             hms: If True, return tuple representing etc in (n_hours, n_min, n_sec).
                 Otherwise, return etc in secs.
+            as_str: If True, returns a string instead of a float.
         """
         if self.curr_it == 0:
             raise ValueError("ETC must be ticked at least once before completion estimation")

@@ -4,6 +4,7 @@ email: zhuohonghe@gmail.com
 date: 2024-03-19
 """
 
+import random
 from datetime import datetime
 import re
 from typing import Union
@@ -11,6 +12,7 @@ import uuid
 
 import mlcore.file as file
 import mlcore.folder as folder
+from mlcore.words import ANIMALS, VERBS, ADJECTIVES
 
 
 """
@@ -40,7 +42,7 @@ def is_name(name: str) -> bool:
     except:
         return False
     # See if the second split is a uuid.
-    if not is_uuid(splits[1]):
+    if not is_uuid(splits[1]) and not is_readable_uuid(splits[1]):
         return False
     # Check for tag validity.
     if len(splits) == 3 and len(splits[2]) == 0:
@@ -48,7 +50,9 @@ def is_name(name: str) -> bool:
     return True
 
 
-def create_name(dt_obj: datetime = None, uuid_str: str = None, tag: str = None) -> str:
+def create_name(
+        dt_obj: datetime = None, uuid_str: str = None, tag: str = None, readable: bool = False
+    ) -> str:
     """
     Create a unique name string using the timestamp and an UUID string.
 
@@ -56,13 +60,16 @@ def create_name(dt_obj: datetime = None, uuid_str: str = None, tag: str = None) 
         dt: A datetime object to use for the timestamp string component of the name.
         uuid: If given, use the given uuid.
         tag: An extra str tag to add to the end of the name.
+        readable: whether to use the human-readable uuid
 
     Return:
         name: A unique name, such as: 20240319-220721_e92e5b34-7ca0-411b-8ca1-fb662fd79ae9_sometag
+            If readable, a unique name such as 20240319-220721_cool-yak_sometag
     """
     dt_str = create_dt_str(dt_obj)
-    uuid_str = uuid_str or str(uuid.uuid4())
-    assert is_uuid(uuid_str), f"uuid_str is not a uuid."
+    if not uuid_str:
+        uuid_str = generate_readable_uuid() if readable else str(uuid.uuid4())
+    assert is_uuid(uuid_str) or is_readable_uuid(uuid_str), f"uuid_str is not a uuid."
     name = dt_str + "_" + uuid_str
     if tag:
         if "_" in tag:
@@ -94,6 +101,44 @@ def parse_name(name: str) -> Union[str,str,str]:
         tag_str = ""
     dt_obj = parse_dt_str(dt_str)
     return dt_obj, uuid_str, tag_str
+
+
+def generate_readable_uuid(n_words: int = 2) -> str:
+    """
+    Generate a readable uuid using common english words.
+
+    Args:
+        n_words: can be either 1, 2, or 3. 
+            - If 1, returns a noun (animal)
+            - If 2, returns a adjective-noun.
+            - If 3, returns a verb-adjective-noun.
+    
+    Return:
+        readable_uuid: Something like "running-cool-aardvark", "genius-bear", "whale"
+    """
+    if n_words == 1:
+        return random.choice(ANIMALS)
+    elif n_words == 2:
+        return random.choice(ADJECTIVES) + "-" + random.choice(ANIMALS)
+    elif n_words == 3:
+        return random.choice(VERBS) + "-" + random.choice(ADJECTIVES) + "-" + random.choice(ANIMALS)
+    else:
+        raise ValueError("n_words can only be 1, 2, or 3")
+
+
+def is_readable_uuid(name: str) -> bool:
+    """
+    Checks if the string is a readable uuid.
+    """
+    words = name.split("-")
+    if len(words) == 1:
+        return bool( words[0] in ANIMALS)
+    elif len(words) == 2:
+        return bool( words[1] in ANIMALS and words[0] in ADJECTIVES)
+    elif len(words) == 3:
+        return bool( words[2] in ANIMALS and words[1] in ADJECTIVES and words[0] in VERBS)
+    else:
+        return False
 
 
 def get_indexed_name(

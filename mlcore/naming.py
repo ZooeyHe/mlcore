@@ -4,6 +4,7 @@ email: zhuohonghe@gmail.com
 date: 2024-03-19
 """
 
+import os
 import random
 from datetime import datetime
 import re
@@ -156,6 +157,7 @@ def get_indexed_name(
         stem: the stem used for naming this series of indexed files.
         ind_fmt: the formatting of the index integers themselves.
         ext: the extension for the file series. For example: ".txt"
+        abs: whether to return the path to the new file or not.
     """
     if ext:
         ext_ = ext[1:]  # Remove the leading "."
@@ -170,8 +172,13 @@ def get_indexed_name(
     # Find the next available index.
     max_ind = max( int(re.search(regex, name).group(1)) for name in existing ) if existing else -1
     next_ind = max_ind + 1
+
     # Create a new name using the next index.
-    return str( stem + "_" + ind_fmt.format(next_ind) + ext )
+    filename = str( stem + "_" + ind_fmt.format(next_ind) + ext )
+    if abs:
+        return os.path.join(root, filename)
+    else:
+        return filename
 
 
 def is_uuid(string: str):

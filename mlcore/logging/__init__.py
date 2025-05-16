@@ -7,6 +7,7 @@ date: 2024-07-04
 import logging
 import os
 import sys
+from contextlib import contextmanager
 
 from .formatters import ConsoleColorFormatter, FileDecoloringFormatter
 
@@ -58,3 +59,15 @@ def setup_file_logging(
     file_handler.setFormatter(FileDecoloringFormatter(fmt=fmt, datefmt=datefmt))
     logger.addHandler(file_handler)
     return logger
+
+
+@contextmanager
+def mute_logging(log: logging.Logger = None):
+    """
+    Temporarily mutes all logging.
+    """
+    if not log:
+        log = logging.getLogger()
+    logging.disable(logging.CRITICAL)
+    yield
+    logging.disable(logging.NOTSET)

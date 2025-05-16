@@ -29,12 +29,13 @@ def read_img(filepath: str, out_ein: str = None) -> np.ndarray:
 
     Returns:
         img_arr: The image array in (H W C, uint8) by default, but will be reformatted to out_ein
-        specs.
+        specs. The channels are R,G,B.
     """
     if not file_exists(filepath) or not get_file_type(filepath).startswith("image"):
         raise ValueError(f"{filepath} is not a valid image file.")
     
-    img_arr = cv2.imread(filepath)
+    img_arr = cv2.imread(filepath)  # Reads the image as BGR
+    img_arr = img_arr[:,:,[2,1,0]]  # Convert BGR to RGB
 
     if out_ein:
         return rearrange(img_arr, f"H W C -> {out_ein}")

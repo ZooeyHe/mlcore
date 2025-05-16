@@ -116,13 +116,14 @@ def recursive_find_files(dir: str, template: str) -> List[str]:
     Recursively traverse the subfolders of "dir" to find matching files using a pattern.
 
     Returns:
-        results: a list of paths to folders that match the pattern.
+        results: a list of abs paths to files that match the pattern.
     """
     results = []
     for root, dirs, files in os.walk(dir):
         for name in files:
-            if file_is_matching(name, template):
-                results.append(os.path.join(root, name))
+            filepath = os.path.join(root, name)
+            if file_is_matching(filepath, template):
+                results.append(filepath)
     return results
 
 
@@ -231,3 +232,12 @@ def create_open(filepath: str, mode: str = "w", makedirs: bool = True, **kwargs)
         yield buffer
 
 
+def remove_file(filepath: str) -> bool:
+    """
+    Delete a file at a specific path.
+    """
+    if not file_exists(filepath):
+        return False
+    else:
+        os.remove(filepath)
+        return True

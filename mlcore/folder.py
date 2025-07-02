@@ -6,6 +6,7 @@ date: 2024-03-19
 
 import errno
 import os
+import inspect
 import re
 import shutil
 from typing import List, Dict, Optional
@@ -134,3 +135,12 @@ def copy_dir(src_dir: str, dst_dir: str, ignore_patterns: List[str] = None):
             shutil.copy(src_dir, dst_dir)
         else:
             raise
+
+
+def curr_dir() -> str:
+    """
+    Get the folder that contains the python file containing the calling line.
+    """
+    frame = inspect.stack()[1]
+    module = inspect.getmodule(frame[0])
+    return os.path.dirname(module.__file__)

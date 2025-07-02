@@ -16,6 +16,7 @@ from mlcore.file import get_file_type, file_exists
 Utilities related to images.
 """
 
+depth_est_pipe = None
 
 # Image loading from disk
 def read_img(filepath: str, out_ein: str = None) -> np.ndarray:
@@ -70,4 +71,75 @@ def save_img(img_arr: np.ndarray, filepath: str, img_ein: str = None) -> None:
 
     img.save(filepath)
 
+
+def grayscale(
+        img: np.ndarray,
+        mode: int = cv2.COLOR_RGB2GRAY,
+        keepdims: bool = False
+    ) -> np.ndarray:
+    """
+    Grayscale an image (H W 3) to (H W 1) if keepdims is false and (H W 3) if keepdims is true.
+    """
+    img = cv2.cvtColor(img, mode)
+    if keepdims:
+        img = np.repeat(img, 3, 2)
+    return img
+
+def compute_disparity(
+        img_1: np.ndarray,
+        img_2: np.ndarray,
+        numDisparities=16,
+        blockSize=15
+    ) -> np.ndarray:
+    """
+    Compute the disparity between two rectified images.
+
+    Args:
+        img_1: image 1, SHAPE H W C
+        img_2: image 2, SHAPE H W C
+        numDisparities: number of disparities.
+        blockSize: The block size
+
+    Returns:
+        disparity: a disparity map using uint8 (H W)
+    """
+    # Grayscale.
+    if img_1.shape[2] == 3:
+        img_1 = grayscale(img_1)
+    if img_2.shape[2] == 3:
+        img_2 = grayscale(img_2)
+
+    # Initialize the stereo block matching object 
+    stereo = cv2.StereoBM.create(numDisparities=numDisparities, blockSize=blockSize)
+
+    # Compute the disparity image
+    disparity = stereo.compute(img_1, img_2)
+
+    # Normalize the image for representation
+    min = disparity.min()
+    max = disparity.max()
+    disparity = np.uint8(6400 * (disparity - min) / (max - min))
+
+    return disparity
+
+
+def estimate_depth(
+    img: np.ndarray, 
+    model_hf: str = "depth-anything/Depth-Anything-V2-Small-hf",
+):
+    """
+    Estimate the depth.
+    """
+    try:
+        from transformers import pipeline
+    except:
+        raise ImportError("Unable to import hf transformers. Please `pip install transformers`")
+
+    global depth_est_pipe
+
+    if depth_est_pipe is None:
+        depth_est_pipe = pipeline(task="depth-estimation", model=model_hf)
     
+    depth = depth_est_pipe(Image.fromarray(np.uint8(img)))["depth"]
+
+    return depth

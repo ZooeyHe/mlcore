@@ -4,9 +4,10 @@ Email: zhuohonghe@gmail.com
 Date: 2023-05-10
 """
 
+from contextlib import contextmanager
 from collections import deque
 import time
-from typing import Union, Tuple
+from typing import Union, Tuple, Callable
 
 """
 Estimated Time of Completion (ETC) is a timer-like package which also estimates time until the
@@ -16,10 +17,30 @@ completion of a task by considering the split times.
 # Default format for (converting hours, minutes, seconds) into a string.
 DEFAULT_HMS_STR_FORMAT = "{:02d}:{:02d}:{:05.2f}"
 
+@contextmanager
+def report_elapsed(callback: Callable[[float],None] = None):
+    """
+    Calculates the amount of time in seconds that elapsed, and calls the callback.
+    """
+    timer = ETC(1)
+    yield
+    callback(timer.tick().elapsed())
+
 
 class ETC():
     """
     Estimated Time of Completion (ETC) Timer Class.
+
+    Usage:
+    ```python
+    etc = ETC(100, window_size=10)
+    for i in range(100):
+        etc.tick()
+        elapsed = etc.elapsed(hms=True, as_str=True)
+        remaining = etc.etc(hms=True, as_str=True)
+
+        print(f"Elapsed: {elapsed} | Remaining: {remaining}")
+    ```
     """
     def __init__(self, num_it: int, window_size: int = None):
         """

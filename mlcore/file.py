@@ -7,6 +7,7 @@ date: 2024-07-03
 from contextlib import contextmanager
 import errno
 import json
+import inspect
 import mimetypes
 import os
 import pandas as pd
@@ -241,3 +242,12 @@ def remove_file(filepath: str) -> bool:
     else:
         os.remove(filepath)
         return True
+    
+
+def curr_file() -> str:
+    """
+    Get the python file that contains the caller.
+    """
+    frame = inspect.stack()[1]
+    module = inspect.getmodule(frame[0])
+    return module.__file__

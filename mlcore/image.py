@@ -126,20 +126,38 @@ def compute_disparity(
 def estimate_depth(
     img: np.ndarray, 
     model_hf: str = "depth-anything/Depth-Anything-V2-Small-hf",
+    batch_size: int = None,
 ):
     """
     Estimate the depth.
+
+    Args:
+        img
     """
     try:
         from transformers import pipeline
     except:
         raise ImportError("Unable to import hf transformers. Please `pip install transformers`")
 
+    if isinstance(img, np.ndarray):
+        if len(img.shape) == 4:
+            img = [im for im in img]
+        else:
+            img = [img]
+    elif isinstance(img, list):
+        pass
+    else:
+        raise ValueError("Invalid img argument type")
+
     global depth_est_pipe
 
     if depth_est_pipe is None:
+        print(f"loading pipeline...")
         depth_est_pipe = pipeline(task="depth-estimation", model=model_hf)
     
-    depth = depth_est_pipe(Image.fromarray(np.uint8(img)))["depth"]
+    depth = depth_est_pipe([Image.fromarray(im) for im in img], batch_size=batch_size)
 
-    return depth
+    if len(img) == 1:
+        return depth[0]["depth"]
+    else:
+        return np.stack([d["depth"] for d in depth], axis=0)

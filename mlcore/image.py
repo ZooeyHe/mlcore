@@ -6,6 +6,7 @@ date: 2025-04-09
 
 import cv2
 import os
+import torch
 from PIL import Image
 import numpy as np
 from einops import rearrange
@@ -123,19 +124,69 @@ def compute_disparity(
     return disparity
 
 
+class DepthEstimator():
+    """
+    Singleton depth estimator. TODO make this thread safe
+    """
+    _instance = None
+    _pipeline = None
+
+    def __new__(cls, *args, **kwargs):
+        try:
+            from transformers import pipeline
+        except:
+            raise ImportError("Unable to import hf transformers. Please `pip install transformers`")
+        
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+            cls._instance._pipeline = pipeline(
+                task="depth-estimation", model=kwargs["model"], use_fast=True
+            )
+        return cls._instance
+
+    def __init__(self, model: str = "depth-anything/Depth-Anything-V2-Small-hf"):
+        pass
+
+    def __call__(self, img: np.ndarray, batch_size: int = None):
+        """
+        Estimate depth using a transformers pipeline.
+
+        Args:
+            img: the rgb image data (uint8, [0-255]). Shape: N H W C || H W C
+            batch_size: the batch size to use.
+
+        Return:
+            depth: the estimated depth (uint8, [0-255]). Shape: N H W || H W
+        """
+        if isinstance(img, np.ndarray):
+            if len(img.shape) == 4:
+                img = [im for im in img]
+            else:
+                img = [img]
+        elif isinstance(img, list):
+            pass
+        else:
+            raise ValueError("Invalid img argument type")
+        
+        outputs = self._pipeline([Image.fromarray(im) for im in img], batch_size=batch_size)
+
+        if len(img) == 1:
+            return outputs[0]["depth"]
+        else:
+            return np.stack([d["depth"] for d in outputs], axis=0)
+
+
 def estimate_depth(
     img: np.ndarray, 
     model_hf: str = "depth-anything/Depth-Anything-V2-Small-hf",
     batch_size: int = None,
 ):
     """
-    Estimate the depth.
-
-    Args:
-        img
+    Estimate the depth. This method is deprecated wrt to the DepthEstimator singleton class.
     """
     try:
         from transformers import pipeline
+        # from transformers import AutoImageProcessor, AutoModelForDepthEstimation
     except:
         raise ImportError("Unable to import hf transformers. Please `pip install transformers`")
 
@@ -152,12 +203,11 @@ def estimate_depth(
     global depth_est_pipe
 
     if depth_est_pipe is None:
-        print(f"loading pipeline...")
-        depth_est_pipe = pipeline(task="depth-estimation", model=model_hf)
+        depth_est_pipe = pipeline(task="depth-estimation", model=model_hf, use_fast=True)
     
-    depth = depth_est_pipe([Image.fromarray(im) for im in img], batch_size=batch_size)
+    outputs = depth_est_pipe([Image.fromarray(im) for im in img], batch_size=batch_size)
 
     if len(img) == 1:
-        return depth[0]["depth"]
+        return outputs[0]["depth"]
     else:
-        return np.stack([d["depth"] for d in depth], axis=0)
+        return np.stack([d["depth"] for d in outputs], axis=0)

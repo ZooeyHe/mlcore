@@ -140,11 +140,11 @@ class DepthEstimator():
         if not cls._instance:
             cls._instance = super().__new__(cls)
             cls._instance._pipeline = pipeline(
-                task="depth-estimation", model=kwargs["model"], use_fast=True
+                task="depth-estimation", model=kwargs["model"], use_fast=True, device=kwargs["device"]
             )
         return cls._instance
 
-    def __init__(self, model: str = "depth-anything/Depth-Anything-V2-Small-hf"):
+    def __init__(self, model: str = "depth-anything/Depth-Anything-V2-Small-hf", device: int = 0):
         pass
 
     def __call__(self, img: np.ndarray, batch_size: int = None):
@@ -180,6 +180,7 @@ def estimate_depth(
     img: np.ndarray, 
     model_hf: str = "depth-anything/Depth-Anything-V2-Small-hf",
     batch_size: int = None,
+    device: int = 0
 ):
     """
     Estimate the depth. This method is deprecated wrt to the DepthEstimator singleton class.
@@ -203,7 +204,7 @@ def estimate_depth(
     global depth_est_pipe
 
     if depth_est_pipe is None:
-        depth_est_pipe = pipeline(task="depth-estimation", model=model_hf, use_fast=True)
+        depth_est_pipe = pipeline(task="depth-estimation", model=model_hf, use_fast=True, device=device)
     
     outputs = depth_est_pipe([Image.fromarray(im) for im in img], batch_size=batch_size)
 

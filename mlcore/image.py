@@ -139,6 +139,10 @@ class DepthEstimator():
         
         if not cls._instance:
             cls._instance = super().__new__(cls)
+            if "device" not in kwargs:
+                kwargs["device"] = 0
+            if "model" not in kwargs:
+                kwargs["model"] = "depth-anything/Depth-Anything-V2-Small-hf"
             cls._instance._pipeline = pipeline(
                 task="depth-estimation", model=kwargs["model"], use_fast=True, device=kwargs["device"]
             )
